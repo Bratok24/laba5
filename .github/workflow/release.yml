@@ -50,4 +50,4 @@ jobs:
         prerelease: false
         files: |
           build/physics-linux
-          build/physics-windows.exe
+          build/physics-windows.exe   
