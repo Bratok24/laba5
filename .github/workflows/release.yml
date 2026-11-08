@@ -20,20 +20,19 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    # Устанавливаем SFML на Linux 
-    - name: Install SFML (Linux)
+    # Устанавливаем зависимости для сборки SFML на Linux (без самого SFML)
+    - name: Install dependencies (Linux)
       if: runner.os == 'Linux'
-      run: sudo apt-get update && sudo apt-get install -y libsfml-dev
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libx11-dev libxrandr-dev libxcursor-dev libxi-dev libudev-dev libgl1-mesa-dev libfreetype6-dev
 
-    # Настраиваем CMake, указывая, что проект лежит в папке 05
     - name: Configure CMake
       run: cmake -B ${{github.workspace}}/build -S ${{github.workspace}}/05 -DCMAKE_BUILD_TYPE=Release
 
-    # Собираем
     - name: Build
       run: cmake --build ${{github.workspace}}/build --config Release
 
-    # Переименовываем файлы, чтобы они не перезаписывали друг друга в релизе
     - name: Rename Linux binary
       if: runner.os == 'Linux'
       run: mv build/physics build/physics-linux
@@ -42,7 +41,6 @@ jobs:
       if: runner.os == 'Windows'
       run: mv build/Release/physics.exe build/physics-windows.exe
 
-    # Создаем релиз и прикрепляем файлы
     - name: Create GitHub Release
       uses: softprops/action-gh-release@v2
       with:
