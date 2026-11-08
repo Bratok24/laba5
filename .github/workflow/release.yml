@@ -1,0 +1,55 @@
+name: Build Release
+
+on:
+  push:
+    branches: [ "main", "master" ]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    # Устанавливаем SFML на Linux 
+    - name: Install SFML (Linux)
+      if: runner.os == 'Linux'
+      run: sudo apt-get update && sudo apt-get install -y libsfml-dev
+
+    # Настраиваем CMake, указывая, что проект лежит в папке 05
+    - name: Configure CMake
+      run: cmake -B ${{github.workspace}}/build -S ${{github.workspace}}/05 -DCMAKE_BUILD_TYPE=Release
+
+    # Собираем
+    - name: Build
+      run: cmake --build ${{github.workspace}}/build --config Release
+
+    # Переименовываем файлы, чтобы они не перезаписывали друг друга в релизе
+    - name: Rename Linux binary
+      if: runner.os == 'Linux'
+      run: mv build/physics build/physics-linux
+
+    - name: Rename Windows binary
+      if: runner.os == 'Windows'
+      run: mv build/Release/physics.exe build/physics-windows.exe
+
+    # Создаем релиз и прикрепляем файлы
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v2
+      with:
+        tag_name: v5.0.${{ github.run_number }}
+        name: Release v5.0.${{ github.run_number }}
+        draft: false
+        prerelease: false
+        files: |
+          build/physics-linux
+          build/physics-windows.exe
